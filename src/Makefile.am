@@ -1,0 +1,9 @@
+AM_CFLAGS=-Wall -g $(GLIB_CFLAGS)
+AM_CXXFLAGS=-Wall -g $(AM_CFLAGS)
+AM_LDFLAGS=-g
+lib_LTLIBRARIES=libTemplateLibraryName.la
+libTemplateLibraryName_la_SOURCES=
+libTemplateLibraryName_la_LIBADD=$(GLIB_LIBS) 
+libTemplateProjectName_la_CXXFLAGS=-I$(top_srcdir)/include
+libTemplateProjectName_la_CFLAGS=$(libTemplateLibraryName_la_CXXFLAGS)
+pkginclude_HEADERS = $(top_srcdir)/include/*.h

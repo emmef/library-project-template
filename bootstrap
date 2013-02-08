@@ -1,0 +1,171 @@
+#!/bin/sh
+
+printSynopsis() {
+	if test -n "$1"
+	then
+		echo "ERROR: $1"
+	fi
+	echo "SYNOPSIS"
+	echo "\tBootstrap generates a autotools shared library project for you."
+	echo "USAGE"
+	echo "\t`basename $0` libraryName projectName sourcePrefix copyRightHolder copyRightContact"
+	echo "\t"
+	echo "\t libraryName       library name of the project (without the lib)"
+	echo "\t projectName       a very short description/name of the project"
+	echo "\t sourcePrefix      prefix for source files and headers"
+	echo "\t copyRightHolder   name of the copyright holder, say John L. Smith"
+	echo "\t copyRightContact  Contact information for the copyright holder, could"
+	echo "\t                   be E-mail or site"
+}
+
+validRegExp() {
+	if test -z "$2"
+	then
+		echo "Empty is no match" >&2
+	fi
+	if echo "$1" | grep -Ei "$2" >/dev/null
+	then
+		echo "$1"
+	else
+		echo "Input '$1' does not match regexp '$2'" >&2
+		exit 1
+	fi
+}
+
+if echo "$1" | grep -Ei "(-{1,2}h\$|-{1,2}help\$|help\$)" >/dev/null
+then
+	printSynopsis 
+	exit 0
+fi
+
+if ! test -n "$5"
+then 
+	printSynopsis "Missing argument(s)" >&2
+	exit 1
+fi
+
+allowedCommentCharacters="[-+_a-z0-9.%,\"\?@<>/]"
+libraryNameRegExp="^[a-z][-_0-9a-z]+[a-z0-9]\$"
+nameOrUrlRegExp="^${allowedCommentCharacters}+((\t| )+${allowedCommentCharacters}+){0,4}\$"
+sourcePrefixRegExp="^([a-z][a-z0-9]*[-_]{1})+\$"
+
+if ! libraryName=`validRegExp "$1" "${libraryNameRegExp}"`
+then 
+	printSynopsis "Invalid library name: '$1'" >&2
+	exit 1
+fi
+shift
+
+if ! projectName=`validRegExp "$1" "${nameOrUrlRegExp}"`
+then 
+	printSynopsis "Invalid project name: '$1'" >&2
+	exit 1
+fi
+shift
+
+if ! sourcePrefix=`validRegExp "$1" "${sourcePrefixRegExp}"`
+then 
+	printSynopsis "Invalid source prefix: '$1'" >&2
+	exit 1
+fi
+shift
+
+if ! copyrightHolder=`validRegExp "$1" "${nameOrUrlRegExp}"`
+then 
+	printSynopsis "Invalid copyright holder: '$1'" >&2
+	exit 1
+fi
+shift
+
+if ! copyrightContact=`validRegExp "$1" "${nameOrUrlRegExp}"`
+then 
+	printSynopsis "Invalid copyright contact: '$1'" >&2
+	exit 1
+fi
+shift
+
+echo "Removing source management system directories"
+rm -rf ".git"
+rm -rf ".hg"
+rm *~
+
+
+currentYear=`date +"%Y"`
+currentDir=`dirname "$0"`
+
+#projectName=`echo "${projectName}" | sed -r s/"\""/'\\\\"'/g | sed -r s/"'"/""/g`
+#copyrightHolder=`echo "${copyrightHolder}" | sed -r s/'"'/'\"'/g | sed -r s/"'"/"\'"/g | sed -r s/'\\'/'\\\\'/g `
+#copyrightContact=`echo "${copyrightContact}" | sed -r s/'"'/'\"'/g | sed -r s/"'"/"\'"/g | sed -r s/'\\'/'\\\\'/g `
+
+echo "Project name  ${projectName}"
+echo "Copyright     ${currentYear} ${copyrightHolder}"
+echo "Contact       ${copyrightContact}"
+echo "Library       lib${libraryName}"
+echo "Source Prefix ${sourcePrefix}"
+
+substituteVariables() {
+	echo "Substituting templates for '$1'"
+	if ! cat "$1" |\
+		sed -r s/'TemplateLibraryName'/"${libraryName}"/g |\
+		sed -r s/'GenerateProjectInitialCopyrightYear'/"${currentYear}"/g |\
+		sed -r s/'GenerateProjectPrefix'/"${sourcePrefix}"/g |\
+		sed  s/'GenerateProjectDescription'/"${projectName}"/ |\
+		sed  s/'GenerateProjectCopyrightHolder'/"${copyrightHolder}"/ |\
+		sed  s/'GenerateprojectCopyRightContact'/"${copyrightContact}"/ \
+			> "$2"
+	then
+		echo "Error while substituting '$1' to '$2'" >&2
+		exit 1
+fi
+}
+
+sourceGeneratorTemplate="${currentDir}/sourcetemplates/generate-from-template.sh"
+sourceGenerator="${currentDir}/generatesource"
+
+if ! test -f "${sourceGeneratorTemplate}"
+then
+	echo "ERROR: cannot find template for source-code-generator: ${sourceGeneratorTemplate}" >&2
+	exit 1
+fi
+
+if ! substituteVariables "${sourceGeneratorTemplate}" "${sourceGenerator}"
+then
+	echo "Failed to create source file creator" >&2
+	exit 1
+fi
+
+chmod u+x ${sourceGenerator}
+chmod u+x "init-autotools"
+
+echo "Replacing library template name in autotools files with '${projectName}'" 
+
+autoToolsFiles=`find "${currentDir}" -name "Makefile.am"`
+autoToolsFiles="configure.ac AUTHORS COPYING NOTICE README README.md ${autoToolsFiles}"
+
+for autoToolsFile in ${autoToolsFiles}
+do
+	echo "Substitue in ${autoToolsFile}..."
+	if ! substituteVariables "${autoToolsFile}" "${autoToolsFile}~~"
+	then
+		exit 1
+	fi
+	if ! cp "${autoToolsFile}" "${autoToolsFile}~"
+	then
+		echo "Couldn't create backup!"
+		exit 1
+	elif ! mv "${autoToolsFile}~~" "${autoToolsFile}"
+	then
+		echo "Could not copy substituted file back"
+		exit 1
+	fi
+done
+
+echo "DONE!"
+echo "Now would be the time to add your project to source control." 
+echo "."
+echo "You can create source and files using the ./generatesource script"
+echo "."
+echo "After that, use ./init-autotools to create a working autotools project"
+echo "And start building!"
+echo "Regards,"
+echo "Michel Fleur."

@@ -1,0 +1,8 @@
+#! /bin/sh
+echo "Prepare configuration with autotools"
+
+aclocal
+libtoolize
+automake --add-missing
+autoconf
+automake --add-missing

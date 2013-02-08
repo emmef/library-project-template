@@ -1,0 +1,19 @@
+syntax: glob
+
+/config.status
+/config.guess
+/config.sub
+/configure
+/depcomp
+/INSTALL
+/install-sh
+/aclocal.m4
+/autom4te.cache/*
+/config.log
+Makefile
+Makefile.in
+/missing
+.deps
+*.o
+libsimpledsp
+*~
