@@ -88,7 +88,8 @@ do
 				sed -r s/"TemplateProjectCopyrightNotice"/"${copyRightNotice}"/g |\
 				sed -r s/"TemplateProjectCopyrightContact"/"${projectCopyRightContact}"/g |\
 				sed -r s/"TemplateFileName"/"${fileBaseName}"/g |\
-				sed -r s/"TemplateProjectFileGuard"/"${fileGuardName}"/g \
+				sed -r s/"TemplateProjectFileGuard"/"${fileGuardName}"/g |\
+				sed -r s/"TemplateProjectDescription"/"${projectTemplateProjectDescription}"/g \
 				> ${generatedFile}
 		fi
 	done
