@@ -136,6 +136,7 @@ fi
 
 chmod u+x ${sourceGenerator}
 chmod u+x "init-autotools"
+mkdir include
 
 echo "Replacing library template name in autotools files with '${projectName}'" 
 
