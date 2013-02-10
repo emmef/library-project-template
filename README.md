@@ -1,5 +1,3 @@
-Please start everything with ./bootstrap!
-
 GenerateProjectDescription.
 Copyright GenerateProjectInitialCopyrightYear GenerateProjectCopyrightHolder.
 GenerateprojectCopyRightContact
